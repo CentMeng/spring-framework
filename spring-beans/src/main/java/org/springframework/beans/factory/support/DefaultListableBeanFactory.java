@@ -1303,6 +1303,14 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		}
 	}
 
+	/**
+	 * 依赖的 Bean 是集合类 型或者 数组类型 时该怎么实 现 自动装配 。 其 中包 括的类型有数组类型、 Collection或者 Collection子接口类型、 Map类型
+	 * @param descriptor
+	 * @param beanName
+	 * @param autowiredBeanNames
+	 * @param typeConverter
+	 * @return
+	 */
 	@Nullable
 	private Object resolveMultipleBeans(DependencyDescriptor descriptor, @Nullable String beanName,
 			@Nullable Set<String> autowiredBeanNames, @Nullable TypeConverter typeConverter) {
@@ -1322,7 +1330,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			}
 			return stream;
 		}
+		///如果需要注入的 Bea口是数组类型
 		else if (type.isArray()) {
+			//则获取数组成员的类型
 			Class<?> componentType = type.getComponentType();
 			ResolvableType resolvableType = descriptor.getResolvableType();
 			Class<?> resolvedArrayType = resolvableType.resolve(type);
@@ -1332,6 +1342,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			if (componentType == null) {
 				return null;
 			}
+			//按照数组成员类型，查找并且匹配 BeanFactory 的类，如果存在就获取或者创建
 			Map<String, Object> matchingBeans = findAutowireCandidates(beanName, componentType,
 					new MultiElementDescriptor(descriptor));
 			if (matchingBeans.isEmpty()) {
@@ -1341,15 +1352,18 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				autowiredBeanNames.addAll(matchingBeans.keySet());
 			}
 			TypeConverter converter = (typeConverter != null ? typeConverter : getTypeConverter());
+			//使用类型转换器解析转换当前对象数组
 			Object result = converter.convertIfNecessary(matchingBeans.values(), resolvedArrayType);
 			if (result instanceof Object[]) {
 				Comparator<Object> comparator = adaptDependencyComparator(matchingBeans);
 				if (comparator != null) {
+					//使用工厂比较器排序当前数组
 					Arrays.sort((Object[]) result, comparator);
 				}
 			}
 			return result;
 		}
+		//如果这个类型是 Collection 或者 Collect工on 子接口类型
 		else if (Collection.class.isAssignableFrom(type) && type.isInterface()) {
 			Class<?> elementType = descriptor.getResolvableType().asCollection().resolveGeneric();
 			if (elementType == null) {
@@ -1373,6 +1387,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			}
 			return result;
 		}
+		//处理当前 Bean 类型为 Map 的场景
 		else if (Map.class == type) {
 			ResolvableType mapType = descriptor.getResolvableType().asMap();
 			Class<?> keyType = mapType.resolveGeneric(0);
@@ -1386,14 +1401,17 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			Map<String, Object> matchingBeans = findAutowireCandidates(beanName, valueType,
 					new MultiElementDescriptor(descriptor));
 			if (matchingBeans.isEmpty()) {
+				//若没有找到匹配的 Bean， 则返回 null
 				return null;
 			}
+			//若设置自动装配的 Bean 名称集合不为空
 			if (autowiredBeanNames != null) {
 				autowiredBeanNames.addAll(matchingBeans.keySet());
 			}
 			return matchingBeans;
 		}
 		else {
+			//如果不存在上面的情况，贝。返回空， 无法处理
 			return null;
 		}
 	}
@@ -1447,10 +1465,11 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	 */
 	protected Map<String, Object> findAutowireCandidates(
 			@Nullable String beanName, Class<?> requiredType, DependencyDescriptor descriptor) {
-
+		//按照指定的类型查找所有类型的Bean的名称（包括父工厂中的Bean）
 		String[] candidateNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
 				this, requiredType, true, descriptor.isEager());
 		Map<String, Object> result = new LinkedHashMap<>(candidateNames.length);
+		//先在已解决的依赖的Bean中查找，因为Spring内部使用的bean一般都会被注册在这里，所以优先这里查找
 		for (Map.Entry<Class<?>, Object> classObjectEntry : this.resolvableDependencies.entrySet()) {
 			Class<?> autowiringType = classObjectEntry.getKey();
 			if (autowiringType.isAssignableFrom(requiredType)) {
@@ -1462,11 +1481,14 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				}
 			}
 		}
+		//获取匹配的Bean
 		for (String candidate : candidateNames) {
+			///只处理名称不是当前 Bean 名称及工厂 Bean 名称的场景
 			if (!isSelfReference(beanName, candidate) && isAutowireCandidate(candidate, descriptor)) {
 				addCandidateEntry(result, candidate, descriptor, requiredType);
 			}
 		}
+		//如果还没找到并且不是集合或数组 map，则使用 fallback 再次查找
 		if (result.isEmpty()) {
 			boolean multiple = indicatesMultipleBeans(requiredType);
 			// Consider fallback matches if the first pass failed to find anything...
