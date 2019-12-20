@@ -127,7 +127,7 @@ class ConstructorResolver {
 	public BeanWrapper autowireConstructor(String beanName, RootBeanDefinition mbd,
 										   @Nullable Constructor<?>[] chosenCtors, @Nullable Object[] explicitArgs) {
 
-		//为当前BeanWrapperImpl设置类型解析器
+		// 为当前BeanWrapperImpl设置类型解析器
 		BeanWrapperImpl bw = new BeanWrapperImpl();
 		this.beanFactory.initBeanWrapper(bw);
 
@@ -143,14 +143,14 @@ class ConstructorResolver {
 				constructorToUse = (Constructor<?>) mbd.resolvedConstructorOrFactoryMethod;
 				if (constructorToUse != null && mbd.constructorArgumentsResolved) {
 					// Found a cached constructor...
-					//获取构造方法的参数已经被解析的对象
+					// 获取构造方法的参数已经被解析的对象
 					argsToUse = mbd.resolvedConstructorArguments;
 					if (argsToUse == null) {
 						argsToResolve = mbd.preparedConstructorArguments;
 					}
 				}
 			}
-			//如果有参数需要被解析
+			// 如果有参数需要被解析
 			if (argsToResolve != null) {
 				argsToUse = resolvePreparedArguments(beanName, mbd, bw, constructorToUse, argsToResolve, true);
 			}
@@ -159,10 +159,10 @@ class ConstructorResolver {
 		//如果构造方法没有被解析过
 		if (constructorToUse == null || argsToUse == null) {
 			// Take specified constructors, if any.
-			//如果没有找到，则在Bean的class中获取构造函数
+			// 如果没有找到，则在Bean的class中获取构造函数
 			Constructor<?>[] candidates = chosenCtors;
 			if (candidates == null) {
-				//按照Bean描述配置的Class及访问限制配置获取构造方法数组
+				// 按照Bean描述配置的Class及访问限制配置获取构造方法数组
 				Class<?> beanClass = mbd.getBeanClass();
 				try {
 					candidates = (mbd.isNonPublicAccessAllowed() ?
