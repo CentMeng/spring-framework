@@ -1391,6 +1391,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Give any InstantiationAwareBeanPostProcessors the opportunity to modify the
 		// state of the bean before properties are set. This can be used, for example,
 		// to support styles of field injection.
+		//如果实例为空， 并且属性值不为空，则不能注入，抛出异常: 如果属性值为空， 则跳出当前方法
+//如果当前 Bean 不是合成的 Bean，并且在当前工厂中已经注册了 Bean 实例化的后置处理器， 则顺序调 用 Bean 后置处理器，如果其中任意一个处理器发生 问题， 则循环不继续 ， 方法也不继续
 		if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
 				if (bp instanceof InstantiationAwareBeanPostProcessor) {
@@ -1403,26 +1405,30 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		PropertyValues pvs = (mbd.hasPropertyValues() ? mbd.getPropertyValues() : null);
-
+		//只处理当前 Bean 按类型自动注入和按名称自动注入。也就是说 Bea口的属性注入只支持两种 :一种是按照名 称注入，一种是按照类型注入
 		int resolvedAutowireMode = mbd.getResolvedAutowireMode();
 		if (resolvedAutowireMode == AUTOWIRE_BY_NAME || resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
 			MutablePropertyValues newPvs = new MutablePropertyValues(pvs);
 			// Add property values based on autowire by name if applicable.
 			if (resolvedAutowireMode == AUTOWIRE_BY_NAME) {
+				//如果按名称注入，则直接通过 getBean 获取这些 Bean，然后注入，添加属性信息并注册当前依赖的Bean 到 BeanFactory 中
 				autowireByName(beanName, mbd, bw, newPvs);
 			}
 			// Add property values based on autowire by type if applicable.
 			if (resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
+				//按类型获取并解决依赖 ， 调用这个 resolveDependency 方法来处理，在获取对象的值后调用类型 转换处理返回值，并且添加到属性信息中
 				autowireByType(beanName, mbd, bw, newPvs);
 			}
 			pvs = newPvs;
 		}
 
 		boolean hasInstAwareBpps = hasInstantiationAwareBeanPostProcessors();
+		//当前 Bean 是否定义了依赖检查(默认是检查)
 		boolean needsDepCheck = (mbd.getDependencyCheck() != AbstractBeanDefinition.DEPENDENCY_CHECK_NONE);
 
 		PropertyDescriptor[] filteredPds = null;
 		if (hasInstAwareBpps) {
+			//调用 Bean 实例化后置处理器，处理已经设置好的属性，如果有任意 一个处理器返回属性为 null，则 直接完成装配属性
 			if (pvs == null) {
 				pvs = mbd.getPropertyValues();
 			}
@@ -1451,6 +1457,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		if (pvs != null) {
+			//解析转换所有的属性信息，并且为这个 Bean 实例装入所有的属性，绝大多数采用反射机制
 			applyPropertyValues(beanName, mbd, bw, pvs);
 		}
 	}
