@@ -99,22 +99,26 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
 	@Override
 	@Nullable
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
+		//设置元素组件描述信息
 		CompositeComponentDefinition compositeDef =
 				new CompositeComponentDefinition(element.getTagName(), parserContext.extractSource(element));
 		parserContext.pushContainingComponent(compositeDef);
-
+		//配置代理自动创建器
 		configureAutoProxyCreator(parserContext, element);
-
+		//解析孩子节点，并且完成 Bean 描述信息的注册
 		List<Element> childElts = DomUtils.getChildElements(element);
 		for (Element elt: childElts) {
 			String localName = parserContext.getDelegate().getLocalName(elt);
+			//解析 Pointcut 标签并完成注册
 			if (POINTCUT.equals(localName)) {
 				parsePointcut(elt, parserContext);
 			}
 			else if (ADVISOR.equals(localName)) {
+				//解析 Advisor 标签并完成注册
 				parseAdvisor(elt, parserContext);
 			}
 			else if (ASPECT.equals(localName)) {
+				//解析 Aspect 标签并完成注册
 				parseAspect(elt, parserContext);
 			}
 		}

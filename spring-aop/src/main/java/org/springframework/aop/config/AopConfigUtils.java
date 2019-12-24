@@ -57,6 +57,7 @@ public abstract class AopConfigUtils {
 	private static final List<Class<?>> APC_PRIORITY_LIST = new ArrayList<>(3);
 
 	static {
+		//从下面 List 的添加顺序可以看出 Bean 的索引值顺序
 		// Set up the escalation list...
 		APC_PRIORITY_LIST.add(InfrastructureAdvisorAutoProxyCreator.class);
 		APC_PRIORITY_LIST.add(AspectJAwareAdvisorAutoProxyCreator.class);
@@ -84,7 +85,7 @@ public abstract class AopConfigUtils {
 	@Nullable
 	public static BeanDefinition registerAspectJAutoProxyCreatorIfNecessary(
 			BeanDefinitionRegistry registry, @Nullable Object source) {
-
+//如果需要注册， 则将 AspectJAwareAdvisorAutoProxyCreator.class 类型的 Bean 描述信息注 册到 BeanFactory 中
 		return registerOrEscalateApcAsRequired(AspectJAwareAdvisorAutoProxyCreator.class, registry, source);
 	}
 
@@ -119,10 +120,11 @@ public abstract class AopConfigUtils {
 			Class<?> cls, BeanDefinitionRegistry registry, @Nullable Object source) {
 
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
-
+		//如果在 BeanFactory 中存在名为“ org . springframework.aop . config .internalAutoProxyCreator"的 Bean，则不再创建
 		if (registry.containsBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME)) {
 			BeanDefinition apcDefinition = registry.getBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME);
 			if (!cls.getName().equals(apcDefinition.getBeanClassName())) {
+				//如果当前 Bean 的 class 与容器中己存在的 Bean 描述信息的 class 不一致，则按照类的优先级来选 //择使用目标类
 				int currentPriority = findPriorityForClass(apcDefinition.getBeanClassName());
 				int requiredPriority = findPriorityForClass(cls);
 				if (currentPriority < requiredPriority) {
@@ -132,6 +134,7 @@ public abstract class AopConfigUtils {
 			return null;
 		}
 
+		//如果在当前 BeanFactory 中没有这个 Bean 的描述信息 ，则为当前对象创建 Bean 描述信息并将其注册到 BeanFactory 中
 		RootBeanDefinition beanDefinition = new RootBeanDefinition(cls);
 		beanDefinition.setSource(source);
 		beanDefinition.getPropertyValues().add("order", Ordered.HIGHEST_PRECEDENCE);
